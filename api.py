@@ -5,52 +5,22 @@ from sentence_transformers import SentenceTransformer
 from typing import List, Optional, Dict, Any
 import uvicorn
 import contextlib
+from reader import file_read
 
-# --- Global Variables ---
+# Global Variables
 model: SentenceTransformer = None
 index: faiss.Index = None
 datastore: List[Dict[str, Any]] = []
 
-# --- Dummy Data (Same as before) ---
-DUMMY_DOCS = [
-    # ... (no change from original code) ...
-    {
-        "content": "Welcome to the Electrical Engineering Department admissions page for 2023. We offer programs in power systems and electronics.",
-        "metadata": {"department": "Electrical", "year": "2023", "type": "admissions"}
-    },
-    {
-        "content": "The Computer Science Department curriculum for 2022 includes courses on AI, data structures, and software engineering.",
-        "metadata": {"department": "Computer Science", "year": "2022", "type": "curriculum"}
-    },
-    {
-        "content": "University of Moratuwa general regulations and student conduct rules, updated for 2023.",
-        "metadata": {"department": "General", "year": "2023", "type": "regulation"}
-    },
-    {
-        "content": "Research spotlight: Electrical Engineering 2023 projects on renewable energy and smart grids.",
-        "metadata": {"department": "Electrical", "year": "2023", "type": "research"}
-    },
-    {
-        "content": "A guide to library resources for all Computer Science students (2023).",
-        "metadata": {"department": "Computer Science", "year": "2023", "type": "guide"}
-    },
-    {
-        "content": "Information on 2023 admissions for postgraduate studies in Computer Science.",
-        "metadata": {"department": "Computer Science", "year": "2023", "type": "admissions"}
-    }
-]
-
-# --- Startup Function (Same as before) ---
+#Startup Function
 def setup_vector_store():
     """
-    Builds the FAISS index from DUMMY_DOCS on application startup.
+    Builds the FAISS index on application startup.
     """
     global model, index, datastore
     print("Setting up vector store...")
-
-    # ... (function content is identical to the original) ...
     
-    datastore = DUMMY_DOCS
+    datastore = file_read('docs')
     contents = [doc['content'] for doc in datastore]
     model = SentenceTransformer('all-MiniLM-L6-v2')
     print("Creating embeddings for documents...")
@@ -61,10 +31,10 @@ def setup_vector_store():
     index = faiss.IndexFlatIP(dimension)
     index.add(embeddings)
     print(f"Index created with {index.ntotal} vectors.")
-    print("✅ Vector store setup complete.")
+    print("Vector store setup complete.")
 
 
-# --- 4. FastAPI Application (UPDATED) ---
+#FastAPI Application
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -85,11 +55,9 @@ app = FastAPI(
     title="University Document Search API",
     description="A Home Lab project using FastAPI and FAISS for metadata-filtered retrieval.",
     lifespan=lifespan,
-    docs_url=None,  # <-- This disables the "/docs" (Swagger UI) page
-    redoc_url=None  # <-- This disables the "/redoc" (ReDoc) page
+    docs_url=None,
+    redoc_url=None
 )
-
-# <-- 3. REMOVE THE OLD @app.on_event("startup") FUNCTION -->
 
 
 @app.get("/search", response_model=List[Dict[str, Any]])
@@ -101,7 +69,6 @@ async def search(
     """
     Search the vector store with metadata filtering.
     """
-    # ... (function content is identical to the original) ...
 
     global model, index, datastore
     print(f"\nReceived query: '{query}', filters: department={department}, year={year}")
